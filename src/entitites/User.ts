@@ -18,8 +18,7 @@ export class User {
   @Column({ type: "varchar", nullable: true })
   designation: string;
 
-  @Column({type: "varchar",default: "users",})
+  @Column({type: "varchar",default: "user",})
   role: string;
-
 
 }

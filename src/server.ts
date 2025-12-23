@@ -1,11 +1,19 @@
 import "reflect-metadata"
 import express from "express"
+import cors from 'cors'
 import { AppDataSource } from "./config/data-source"
+import userRoutes from './routes/user.route'
 
 const app = express()
+
+app.use(cors())
+app.use(express.json())
+
+
 const PORT = 3000
 
-app.use(express.json())
+app.use('/api/users',userRoutes)
+
 
 AppDataSource.initialize()
   .then(() => {
