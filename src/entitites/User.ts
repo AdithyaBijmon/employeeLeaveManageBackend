@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
+import { Leave } from "./Leave";
 
 @Entity("users")
 export class User {
@@ -20,5 +21,8 @@ export class User {
 
   @Column({type: "varchar",default: "user",})
   role: string;
+
+  @OneToMany(() => Leave, leave => leave.user)
+  leaves: Leave[];
 
 }

@@ -3,6 +3,7 @@ import express from "express"
 import cors from 'cors'
 import { AppDataSource } from "./config/data-source"
 import userRoutes from './routes/user.route'
+import leaveRoutes from './routes/leave.route'
 
 const app = express()
 
@@ -13,6 +14,7 @@ app.use(express.json())
 const PORT = 3000
 
 app.use('/api/users',userRoutes)
+app.use(leaveRoutes)
 
 
 AppDataSource.initialize()

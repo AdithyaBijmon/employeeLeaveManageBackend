@@ -10,3 +10,4 @@ export const getUsers = async (req:any,res:any)=>{
   const users = await userRepo.find()
   res.json(users)
 }
+

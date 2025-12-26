@@ -2,6 +2,7 @@ import "reflect-metadata"
 import { DataSource } from "typeorm"
 import { User } from "../entitites/User"
 import dotenv from "dotenv"
+import { Leave } from "../entitites/Leave"
 
 dotenv.config()
 
@@ -22,5 +23,5 @@ export const AppDataSource = new DataSource({
   database: getEnv("DB_NAME"),
   synchronize: true,
   logging: false,
-  entities:[User]
+  entities:[User,Leave]
 })
