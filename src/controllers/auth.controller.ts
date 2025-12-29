@@ -19,7 +19,7 @@ export const loginUser = async (req: any, res: any) => {
         }
 
 
-        const token = jwt.sign({ email: user!.email, role: user!.role }, process.env.JWT_SECRET || "")
+        const token = jwt.sign({ email: user!.email, role: user!.role,id:user!.id }, process.env.JWT_SECRET || "")
         res.status(200).json({ token, user })
     }
     catch (error) {
