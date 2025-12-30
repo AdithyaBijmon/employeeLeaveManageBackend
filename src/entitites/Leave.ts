@@ -30,8 +30,6 @@ export class Leave {
     @Column({ type: "date" })
     endDate: Date;
 
-    @Column({ type: "int" })
-    leaveBalance: number;
 
     @Column({ type: "varchar", length: 300 })
     leaveReason: String;

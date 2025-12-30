@@ -12,15 +12,18 @@ export class User {
   @Column({ type: "varchar", unique: true })
   email: string;
 
-  
+
   @Column({ type: "varchar", select: false })
   password: string;
 
   @Column({ type: "varchar", nullable: true })
   designation: string;
 
-  @Column({type: "varchar",default: "user",})
+  @Column({ type: "varchar", default: "user", })
   role: string;
+
+  @Column({ type: 'double precision', default: 20 })
+  leaveBalance: number;
 
   @OneToMany(() => Leave, leave => leave.user)
   leaves: Leave[];
