@@ -71,53 +71,56 @@ export const cancelLeave = async (req: any, res: any) => {
 }
 
 
-
 const calculateLeaveDays = (startDate: Date, endDate: Date, dayType: string) => {
-    if (startDate.toDateString() === endDate.toDateString()) {
-        return dayType === 'Full' ? 1 : 0.5
+    const start = new Date(startDate.toDateString())
+    const end = new Date(endDate.toDateString())
+
+    const diffTime = end.getTime() - start.getTime()
+    let days = diffTime / (1000 * 60 * 60 * 24) + 1
+
+    if (days === 1 && (dayType.toLowerCase().includes('half'))) {
+        return 0.5
     }
 
-    const diffTime = endDate.getTime() - startDate.getTime()
-    return diffTime / (1000 * 60 * 60 * 24) + 1
+    return days
+
 }
 
 export const approveLeave = async (req: any, res: any) => {
-    const { id } = req.params
+    const { id } = req.params;
 
     try {
-        const approve = await leaveRepo.findOne({ where: { id } })
+        const approve = await leaveRepo.findOne({  where: { id },relations: ["user"] });
 
         if (!approve) {
-            return res.status(404).json({ message: "Leave not found" })
+            return res.status(404).json({ message: "Leave not found" });
         }
 
-        if (approve.status === "approved") {
-            return res.status(400).json({ message: "Leave already approved" })
-        }
 
         const leaveDays = calculateLeaveDays(
             new Date(approve.startDate),
             new Date(approve.endDate),
             approve.dayType.toString()
-        )
+        );
+
 
         if (approve.user.leaveBalance < leaveDays) {
-            return res.status(400).json({ message: "Insufficient leave balance." })
+            return res.status(400).json({ message: "Insufficient leave balance." });
         }
 
-        approve.user.leaveBalance -= leaveDays
-        approve.status = "approved"
+        
+        approve.user.leaveBalance -= leaveDays;
+        approve.status = "approved";
 
-        await leaveRepo.save(approve)
+        
+        await userRepo.save(approve.user); 
+        await leaveRepo.save(approve);
 
-        res.status(200).json({
-            message: "Leave approved successfully",
-            deductedDays: leaveDays,
-            remainingBalance: approve.user.leaveBalance
-        })
+        res.status(200).json({message: "Leave approved successfully", deductedDays: leaveDays,remainingBalance: approve.user.leaveBalance});
 
     } catch (err) {
-        res.status(500).json(err)
+        console.error(err); // Always log the error to see what failed
+        res.status(500).json({ message: "Internal server error", error: err });
     }
 }
 

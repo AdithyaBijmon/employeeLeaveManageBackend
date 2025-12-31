@@ -21,6 +21,19 @@ export const addUser = async (req: any, res: any) => {
     res.status(200).json({ message: "User added successfully." })
   }
 }
+
+// get a single user
+export const getAnEmployee = async(req:any,res:any)=>{
+  const email = req.user.email
+  try{
+   const user = await userRepo.findOne({where:{email}})
+   res.status(200).json(user)
+  }
+  catch(err){
+    res.status(500).json(err)
+  }
+}
+
 // get Users 
 export const getUsers = async (req: any, res: any) => {
 
