@@ -2,17 +2,29 @@ import { log } from "console";
 import { AppDataSource } from "../config/data-source"
 import { Leave } from "../entitites/Leave"
 import { User } from "../entitites/User";
+import nodemailer from 'nodemailer'
 
 const leaveRepo = AppDataSource.getRepository(Leave)
 const userRepo = AppDataSource.getRepository(User)
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.ADMIN_EMAIL,
+        pass: process.env.ADMIN_PASS,
+    },
+    tls: {
+
+        rejectUnauthorized: false
+    }
+});
+
 
 export const addLeave = async (req: any, res: any) => {
-
-    // console.log("inside leave controller");
+    const userMail = req.user.email
 
     const { fullName, phone, department, leaveType, dayType, startDate, endDate, leaveReason } = req.body
-    const initialLeaveBalance = 20
+
 
     try {
         const user = await userRepo.findOne({ where: { id: req.user.id } })
@@ -22,6 +34,23 @@ export const addLeave = async (req: any, res: any) => {
         const newLeave = leaveRepo.create({ fullName, phone, department, leaveType, dayType, startDate, endDate, leaveReason, status: "pending", user })
 
         await leaveRepo.save(newLeave)
+
+        const mailOptions = {
+            from: userMail,
+            to: process.env.ADMIN_EMAIL,
+            replyTo: userMail,
+            subject: `Leave Request - ${fullName}`,
+            html: `
+                <h3>New Leave Request Received</h3>
+                <p><strong>Employee:</strong> ${fullName}</p>
+                <p><strong>Duration:</strong> ${startDate} to ${endDate}</p>
+                <p><strong>Reason:</strong> ${leaveReason}</p>
+                <br/>`,
+        }
+
+        await transporter.sendMail(mailOptions)
+
+
 
         res.status(200).json({ message: "Leave request send Successfully" })
     }
@@ -44,9 +73,9 @@ export const getAllLeaves = async (req: any, res: any) => {
 }
 
 export const getAllMyLeaves = async (req: any, res: any) => {
-    console.log("REQ.USER 👉", req.user);
+    // console.log("REQ.USER ", req.user);
 
-    console.log("user id : ", req.user.id)
+    // console.log("user id : ", req.user.id)
     try {
         const myLeaves = await leaveRepo.find({ where: { user: { id: req.user.id } } })
         res.status(200).json(myLeaves)
@@ -89,8 +118,9 @@ const calculateLeaveDays = (startDate: Date, endDate: Date, dayType: string) => 
 export const approveLeave = async (req: any, res: any) => {
     const { id } = req.params;
 
+
     try {
-        const approve = await leaveRepo.findOne({  where: { id },relations: ["user"] });
+        const approve = await leaveRepo.findOne({ where: { id }, relations: ["user"] });
 
         if (!approve) {
             return res.status(404).json({ message: "Leave not found" });
@@ -108,15 +138,31 @@ export const approveLeave = async (req: any, res: any) => {
             return res.status(400).json({ message: "Insufficient leave balance." });
         }
 
-        
+
         approve.user.leaveBalance -= leaveDays;
         approve.status = "approved";
 
-        
-        await userRepo.save(approve.user); 
+
+        await userRepo.save(approve.user);
         await leaveRepo.save(approve);
 
-        res.status(200).json({message: "Leave approved successfully", deductedDays: leaveDays,remainingBalance: approve.user.leaveBalance});
+        const mailOptions = {
+            from: `"Leave System" <${process.env.ADMIN_EMAIL}>`,
+            to: approve.user.email,
+            subject: `Leave request approved `,
+            html: `
+                <h3>Your leave request has been approved!</h3>
+                
+                <p>${approve.startDate} - ${approve.endDate}</p>
+                <h4>Your leave Balance is ${approve.user.leaveBalance} days</h3>
+               `,
+        }
+
+        await transporter.sendMail(mailOptions)
+
+
+
+        res.status(200).json({ message: "Leave approved successfully", deductedDays: leaveDays, remainingBalance: approve.user.leaveBalance });
 
     } catch (err) {
         console.error(err); // Always log the error to see what failed
@@ -135,6 +181,20 @@ export const rejectLeave = async (req: any, res: any) => {
         }
         reject.status = 'rejected'
         await leaveRepo.save(reject)
+
+        
+
+        const mailOptions = {
+            from: `"Leave System" <${process.env.ADMIN_EMAIL}>`,
+            to: reject.user.email,
+            subject: `Leave request approved `,
+            html: `
+                <h3>Your leave request has been rejected!</h3>
+                
+                <p>${reject.startDate} - ${reject.endDate}</p>
+               `,
+        }
+        await transporter.sendMail(mailOptions)
         res.status(200).json(reject)
     }
     catch (err) {
